@@ -12,3 +12,4 @@ If you have a code example or sample code, consider placing them in another repo
 
 If you don't know where to start, [please consult the list of open issues](https://github.com/davecheney/go-1.8-release-party/issues) or grep the presentation for `TODO`.
 
+## maybe amalgimate some of the FOSDEM slide differences
