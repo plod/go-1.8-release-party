@@ -13,3 +13,4 @@ If you have a code example or sample code, consider placing them in another repo
 If you don't know where to start, [please consult the list of open issues](https://github.com/davecheney/go-1.8-release-party/issues) or grep the presentation for `TODO`.
 
 ## maybe amalgimate some of the FOSDEM slide differences
+[![The State of Go - February 2017](https://img.youtube.com/vi/tY4UKkgb5IY/0.jpg)](https://www.youtube.com/watch?v=tY4UKkgb5IY)
