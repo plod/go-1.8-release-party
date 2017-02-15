@@ -3,6 +3,8 @@ Cardiff Go Meetup
 15 Feb 2017
 
 Daniel Morgan
+@plodtv
+me@plod.tv
 
 * License and Materials
 
@@ -16,11 +18,11 @@ You are encouraged to remix, transform, or build upon the material, providing yo
 
 If you have suggestions or corrections to this presentation, please raise [[https://github.com/davecheney/go-1.8-release-party/issues][an issue on the GitHub project]].
 
-* DRAFT PRESENTATION
+Merged the Google state of go slides as in more final state
 
-THIS IS A DRAFT PRESENTATION
+.link https://github.com/golang/talks/blob/
 
-IF YOU WOULD LIKE TO CONTRIBUTE TO THIS PRESENTATION PLEASE CONSULT THE [[https://github.com/davecheney/go-1.8-release-party/issues][LIST OF OPEN ISSUES FOR THIS PRESENTATION]]
+Most of the code examples won't run except locally and using Go 1.8. The playground runs Go 1.7.
 
 * Go 1.8
 
@@ -34,228 +36,17 @@ Go 1.8 is the 9th release in the Go 1 series. It follows from the previous versi
 
 .link http://beta.golang.org/doc/go1.8 Go 1.8 Release Notes (DRAFT)
 
-* What's changed
+* Agenda
 
-So, what's happened in the last six months.
+Changes since Go 1.7:
 
-- Performance
-- Compiler changes
-- Changes to the standard library
+- The Language
+- The Standard Library
+- The Runtime
+- The Tooling
+- The Community
 
-* Performance
-
-* Performance
-
-As always, the changes are so general and varied that precise statements about performance are difficult to make.
-
-Most programs should run a bit faster, due to speedups in the garbage collector and optimizations in the standard library.
-
-The new back end, based on static single assignment form (SSA), generates more compact, more efficient code and provides a better platform for optimizations such as bounds check elimination.
-
-The new back end reduces the CPU time required by our benchmark programs by 20-30% on 32-bit ARM systems. For 64-bit x86 systems, which already used the SSA back end in Go 1.7, the gains are a more modest 0-10%. Other architectures will likely see improvements closer to the 32-bit ARM numbers.
-
-.link https://dave.cheney.net/2016/11/19/go-1-8-toolchain-improvements Go 1.8 Toolchain Improvements
-
-* Garbage Collector
-
-Garbage collection pauses should be significantly shorter than they were in Go 1.7, usually under 100 microseconds and often as low as 10 microseconds.
-
-.link https://talks.golang.org/2017/state-of-go.slide#34 Garbage Collector Improvements Over Time (ht. @francesc)
-
-# More work remains for Go 1.9.
-
-# .link https://github.com/golang/proposal/blob/master/design/17503-eliminate-rescan.md Eliminating Stop-The-World Stack Re-scanning (Design doc)
-
-* Defer
-
-The overhead of deferred function calls has been reduced by about half.
-
- name           old time/op  new time/op  delta
- Defer-4        75.1ns ± 1%  43.3ns ± 1%  -42.31%   (p=0.000 n=8+10)
- 
- In reality, this speeds up defer by about 2.2X. The two benchmarks
- below compare a Lock/defer Unlock pair (DeferLock) with a Lock/Unlock
- pair (NoDeferLock). NoDeferLock establishes a baseline cost, so these
- two benchmarks together show that this change reduces the overhead of
- defer from 61.4ns to 27.9ns.
- 
- name           old time/op  new time/op  delta
- DeferLock-4    77.4ns ± 1%  43.9ns ± 1%  -43.31%  (p=0.000 n=10+10)
- NoDeferLock-4  16.0ns ± 0%  15.9ns ± 0%   -0.39%    (p=0.000 n=9+8)
-
-.link https://go-review.googlesource.com/#/c/29656/ Source: CL 29656
- 
-* Cgo
-
-This also shaves the overhead of cgo calls in half:
-
- name       old time/op  new time/op  delta
- CgoNoop-8  93.5ns ± 0%  51.1ns ± 1%  -45.34%  (p=0.016 n=4+5) 
-
-.link https://go-review.googlesource.com/#/c/29656/ Source: CL 29656
-.link https://dave.cheney.net/2016/11/19/go-1-8-toolchain-improvements#defer Defer and cgo improvements
-
-* Miscellaneous performance improvements
-
-Lots of small updates to the standard library.
-
-There have been optimizations to implementations in the `bytes`, `crypto/aes`, `crypto/cipher`, `crypto/elliptic`, `crypto/sha256`, `crypto/sha512`, `encoding/asn1`, `encoding/csv`, `encoding/hex`, `encoding/json`, `hash/crc32`, `image/color`, `image/draw`, `math`, `math/big`, `reflect`, `regexp`, `runtime`, `strconv`, `strings`, `syscall`, `text/template`, and `unicode/utf8` packages.
-
-.link http://beta.golang.org/doc/go1.8#library Go 1.8 Standard Library Changes
-
-* Compiler changes
-
-* SSA backend
-
-- All backends updated to use the new SSA form. Old "plan9" style compiler backend deleted.
-- Big performance improvements for 32-bit ARM.
-- Easy to add new SSA backends (for values of easy compilier engineers work in).
-
-* New parser
-
-Robert Griesemer and Matthew Dempsky replaced the parser.
-
-# TODO LINK TO CHANGE
-
-The new parser removes many of the package level variables which came along for the ride from the previous YACC based parser. Removing package level globals is a stepping stone to making the compiler more parallel.
-
-This new parser is reportedly considerably faster, but in 1.8 is hamstrung by having to convert between the new style AST and the old version the rest of the compiler expects.
-
-Expect this AST conversion to be removed in Go 1.9.
-
-* Compiler speed
-
-About a 12-15% improvement compared to Go 1.7
-
-.image https://dave.cheney.net/wp-content/uploads/2016/11/Screenshot-2016-11-19-at-08.57.10.png
-
-* Struct conversion
-
-When explicitly converting a value from one struct type to another, as of Go 1.8 the tags are ignored.
-
-.play examples/struct_conversion.go /START OMIT/,/END OMIT/
-
-* Ports
-
-The number of platforms Go supports, on balance, continues to grow.
-
-- Go now supports 32-bit MIPS on Linux for both big-endian (linux/mips) and little-endian machines (linux/mipsle) that implement the MIPS32r1 instruction set with FPU or kernel FPU emulation. Note that many common MIPS-based routers lack an FPU and have firmware that doesn't enable kernel FPU emulation; Go won't run on such machines.
-- On DragonFly BSD, Go now requires DragonFly 4.4.4 or later.
-- On OpenBSD, Go now requires OpenBSD 5.9 or later.
-- The Plan 9 port's networking support is now much more complete and matches the behavior of Unix and Windows with respect to deadlines and cancelation.
-- Go 1.8 now only supports OS X 10.8 or later. This is likely the last Go release to support 10.8. Compiling Go or running binaries on older OS X versions is untested.
-
-* Go 1.8 may be the last to support ARMv5
-
-Supporting ARMv5 has been a problem for several releases. 
-
-Currently we have no ARMv5 builders so have no idea if Go 1.8 actually works on real ARMv5 hardware (we test on ARMv7).
-
-Several companies have complained about loosing ARMv5 support, and several have offered to run a builder -- but there are _still_ no real ARMv5 builders on the dashboard.
-
-If you or your company care about ARMv5, you have to shoulder some of the burdon. Contact @bradfitz and set up a builder.
-
-.link https://github.com/golang/go/issues/17082 Proposal: runtime: drop support for linux/armv5E and linux/armv6
-
-_No_ARMv5_builders_means_ARMv5_support_will_be_dropped_in_Go_1.9_.
-
-* Tools
-
-* go tool yacc
-
-The yacc tool (previously available by running “go tool yacc”) has been removed. As of Go 1.7 it was no longer used by the Go compiler.
-
-It has moved to the “tools” repository and is now available at golang.org/x/tools/cmd/goyacc.
-
-* go tool asm
-
-`go`tool`asm` now supports a flotilla of Intel and PPC vector instructions. [[https://beta.golang.org/doc/go1.8#cmd_asm][Consult the release notes for the specifics]].
-
-* go tool trace
-
-The `trace` tool has a new `-pprof` flag for producing pprof-compatible blocking and latency profiles from an execution trace.
-
-Garbage collection events are now shown more clearly in the execution trace viewer.
-
-Garbage collection activity is shown on its own row and GC helper goroutines are annotated with their roles.
-
-.link https://www.youtube.com/watch?v=mmqDlbWk_XA Rhys Hiltner (dotGo 2016)
-
-* go tool vet
-
-Vet is stricter in some ways and looser where it previously caused false positives. Vet now checks for:
-
-- copying an array of locks
-- duplicate JSON and XML struct field tags
-- non-space-separated struct tags
-- deferred calls to HTTP `Response.Body.Close` before checking errors
-- indexed arguments in `Printf`.
-
-.code examples/vet_repeated_json_tags.go
-
-.play examples/govet.sh /go tool/
-
-* go fix
-
-`go`fix` now rewrites references to `golang.org/x/net/context` to the standard library provided `context` package.
-
-* go bug
-
-The new `go`bug` command starts a bug report on GitHub, prefilled with information about the current system.
-
-Example:
-
-.play examples/gobug.sh /go bug/
-
-* Mutex contention profile
-
-Peter Wienberger has added a new pprof profile, mutex contention.
-
-TODO NEEDS EXAMPLE
-
-_note_: Due to an oversight this only works with `sync.Mutex`, not `sync.RWMutex`, this oversight will be addressed early in Go 1.9.
-
-.link https://github.com/golang/go/issues/18496 runtime: contended mutex profiling doesn't work for sync.RWMutex
-
-* Plugins
-
-Go now supports a “plugin” build mode for generating plugins written in Go, and a new plugin package for loading such plugins at run time.
-
-Plugin support is currently only available on Linux.
-
-* Plugin Example
-
-.code examples/plugins/plugin.go
-
-Then to build plugin.so
-
- $ go build -buildmode=plugin plugin.go
-
-* Plugin Example - Using Plugin
-.code examples/plugins/main.go  /START OMIT/,/END OMIT/
-
- $ go run main.go
- main started...
- Plugin loading
- Hello, number 7
-
-* Plugins demo
-
-Demo video: [[https://twitter.com/francesc/status/827851085943566336][twitter.com/francesc]]
-
-Source code: [[https://github.com/campoy/golang-plugins][github.com/campoy/golang-plugins]]
-
-* os.Executable
-
-`os.Executable` returns an absolute path to the currently running program.
-
-.play examples/os_executable.go /START OMIT/,/END OMIT/
-
-Executable returns the path name for the executable that started the current process. There is no guarantee that the path is still pointing to the correct executable.
-
-If a symlink was used to start the process, depending on the operating system, the result might be the symlink or the path it pointed to. If a stable result is needed, path/filepath.EvalSymlinks might help.
-
-.link http://beta.golang.org/pkg/os/#Executable os.Executable (godoc.org)
+* Changes to the language
 
 * Conversion rules
 
@@ -263,17 +54,17 @@ How many times have you found yourself with two types that were *almost* equal?
 
 Let's say you define `Person`:
 
-.code examples/json_old.go /type Person/,/^}/
+.code state-of-go/stdlib/json_old.go /type Person/,/^}/
 
 And that for some reason, like JSON you also have:
 
-.code examples/json_old.go /var aux/,/}/
+.code state-of-go/stdlib/json_old.go /var aux/,/}/
 
 * Conversion rules
 
 In order to convert `aux` to type `Person` you needed to do:
 
-.code examples/json_old.go /type Person/,/}/
+.code state-of-go/stdlib/json_old.go /type Person/,/}/
 
     return Person{
         Name:     aux.Name,
@@ -337,6 +128,32 @@ ARM:
 
     go tool dist -check-armv6k
 
+* Tools
+
+* Fix
+
+Fixes the import path `"golang.org/x/net/context"` to `"context"`.
+
+.code state-of-go/tools/gofix.go
+
+Simply run the command below:
+
+.play state-of-go/tools/gofix.sh /go tool/
+
+Drop the `-diff` flag to rewrite the files.
+
+* Vet
+
+"Vet is stricter in some ways and looser where it previously caused false positives."
+
+Example of extra check:
+
+.play -edit state-of-go/tools/govet.go /func main/,
+
+`govet` detects the problem statically:
+
+.play state-of-go/tools/govet.sh /go vet/
+
 * SSA everywhere!
 
 The SSA backend:
@@ -348,6 +165,10 @@ For 32-bit ARM systems this means 20-30% speed up!
 
 For others (where SSA was used already) gains are 0-10%.
 
+* SSA everywhere
+
+.image state-of-go/img/benchmark.png _ 800
+
 * Default GOPATH
 
 Yay!
@@ -357,13 +178,26 @@ When `GOPATH` is not defined, the tool will use:
 - `$HOME/go` on Unix
 - `%USERPROFILE%\go` on Windows
 
+* go bug
+
+Easier way to create bugs including all relevant information.
+
+Example:
+
+.play state-of-go/tools/gobug.sh /go bug/
+
 * Runtime
 
 * Detection of concurrent map accesses
 
-In Go 1.6, the runtime added lightweight, best-effort detection of concurrent misuse of maps. This release improves that detector with support for detecting programs that concurrently write to and iterate over a map.
+Improvement on Go 1.6.
 
-As always, if one goroutine is writing to a map, no other goroutine should be reading (which includes iterating) or writing the map concurrently. If the runtime detects this condition, it prints a diagnosis and crashes the program. The best way to find out more about the problem is to run the program under the race detector, which will more reliably identify the race and give more detail.
+.play state-of-go/runtime/mapcrash.go /const/,/Wait\(\)/
+
+Outputs:
+
+	fatal error: concurrent map read and map write
+	fatal error: concurrent map writes
 
 * Mutex Contention Profiling
 
@@ -371,27 +205,256 @@ Profile your benchmarks and the contention on your mutexes.
 
     go test bench=. -mutexprofile=mutex.out
 
+
+Alternatively, activate contention profiling with this new method.
+
+    runtime.SetMutexProfileFraction
+
 _Note_: For now `sync.RWMutex` is not profiled.
 
 * Mutex Contention Profiling
 
-* Homework
+Let's write a program to count how many times each factor appears from 2 to N.
 
-Mutex profile is not supported in, [[pkg/profile][https://github.com/pkg/profile]]. yet ...
+Example N = 10:
 
-Who wants to be the first to send me a PR?
+    Factorizations:
+
+        2:  2
+        3:  3
+        4:  2 2
+        5:  5
+        6:  2 3
+        7:  7
+        8:  2 2 2
+        9:  3 3
+        10: 2 5
+
+    Count:
+
+        2: 8
+        3: 4
+        5: 2
+        7: 1
+
+* Mutex Contention Profiling
+
+Which option is better?
+
+Wide protected region:
+
+.play state-of-go/runtime/mutex/main.go /WIDE/,/Unlock/
+
+Narrow protected region:
+
+.play state-of-go/runtime/mutex/main.go /NARROW/,/}/
+
+* Benchmark
+
+    $ go test -bench=.
+
+#    BenchmarkNarrowSection/10-8         	  300000	      5085 ns/op
+#    BenchmarkNarrowSection/100-8        	   20000	     77458 ns/op
+#    BenchmarkNarrowSection/1000-8       	    2000	    909658 ns/op
+#    BenchmarkNarrowSection/10000-8      	     100	  21230633 ns/op
+#
+#    BenchmarkWideSection/10-8           	  200000	      5323 ns/op
+#    BenchmarkWideSection/100-8          	   10000	    103228 ns/op
+#    BenchmarkWideSection/1000-8         	    1000	   2131861 ns/op
+#    BenchmarkWideSection/10000-8        	      10	 103575793 ns/op
+
+.image state-of-go/img/mutex_noprofile.png _ 1000
+
+* Benchmarking with Mutex Contention
+
+    $ go test -bench=. -mutexprofile=mutex.out
+
+#    BenchmarkNarrowSection/10-8         	  300000	      5464 ns/op
+#    BenchmarkNarrowSection/100-8        	   10000	    108583 ns/op
+#    BenchmarkNarrowSection/1000-8       	    1000	   1378379 ns/op
+#    BenchmarkNarrowSection/10000-8      	     100	  32828827 ns/op
+#
+#    BenchmarkWideSection/10-8           	  200000	      7155 ns/op
+#    BenchmarkWideSection/100-8          	   10000	    197001 ns/op
+#    BenchmarkWideSection/1000-8         	     300	   4339571 ns/op
+#    BenchmarkWideSection/10000-8        	       5	 303559562 ns/op
+
+.image state-of-go/img/mutex_profile.png _ 1000
+
+* Analyzing the Mutex Contention Profile
+
+    $ go tool pprof runtime.test mutex.out
+    Entering interactive mode (type "help" for commands)
+    (pprof) list
+
+    0      5.38s (flat, cum) 43.97% of Total
+    .          .     34:				mu.Lock()
+    .          .     35:				m[f]++
+    .      5.38s     36:				mu.Unlock()
+
+    0      6.86s (flat, cum) 56.03% of Total
+    .          .     53:			mu.Lock()
+    .          .     54:			for _, f := range factors(i) {
+    .          .     55:				m[f]++
+    .          .     56:			}
+    .      6.86s     57:			mu.Unlock()
+
+* So much contention ...
+
+* Contention by CPU
+
+.image state-of-go/img/mutex_procs.png _ 1000
+
+* Comparing it to sequential algorithm
+
+.image state-of-go/img/mutex_all.png _ 1000
+
+* Comparing it to sequential algorithm (zoom)
+
+.image state-of-go/img/mutex_all_zoom.png _ 1000
+
+* Performance
+
+* GC history in tweets
+
+* go 1.5
+
+.image state-of-go/img/gct1.png _ 900
+
+* go 1.6
+
+.image state-of-go/img/gct2.png _ 900
+
+* go 1.7
+
+.image state-of-go/img/gct4.png _ 900
+
+* go 1.8 (beta 1)
+
+.image state-of-go/img/gct5.png _ 700
+
+* go 1.8 (beta 1) CPU
+
+.image state-of-go/img/gctcpu.png _ 800
+
+* defer is faster
+
+    name         old time/op  new time/op  delta
+    Defer-4       101ns ± 1%    66ns ± 0%  -34.73%  (p=0.000 n=20+20)
+    Defer10-4    93.2ns ± 1%  62.5ns ± 8%  -33.02%  (p=0.000 n=20+20)
+    DeferMany-4   148ns ± 3%   131ns ± 3%  -11.42%  (p=0.000 n=19+19)
+
+.image state-of-go/img/defer.png _ 500
+
+* cgo is also faster!
+
+    name       old time/op  new time/op  delta
+    CgoNoop-8  93.5ns ± 0%  51.1ns ± 1%  -45.34%  (p=0.016 n=4+5)
+
+.image state-of-go/img/cgo.png _ 500
+
+Source: [[https://dave.cheney.net/2016/11/19/go-1-8-toolchain-improvements][dave.cheney.net]]
 
 * Changes to the standard library
 
+* Sorting
+
+Exercise:
+
+Given a slice of `Person`
+
+    var p []Person
+
+Print the slice sorted by name, age, and SSN.
+
+.code state-of-go/stdlib/sort/sort_test.go /sort.Sort/,/bySSN/
+
+Easy, right?
+
+* Sorting
+
+Well, you forgot about this part.
+
+.code state-of-go/stdlib/sort/sort_test.go /byName/,/bySSN\) Swap/
+
 * sort.Slice
+
+Since Go 1.8 you can simply write this:
+
+.code state-of-go/stdlib/sort/sort_test.go /sort\.Slice/,/SSN/
+
+Also new `SliceStable` and `SliceIsSorted`.
+
+* Benchmark
+
+    N=1 go test -bench=.
+        BenchmarkSortSort-8     10000000               145 ns/op
+        BenchmarkSortSlice-8    10000000               190 ns/op
+    N=10 go test -bench=.
+        BenchmarkSortSort-8      2000000               918 ns/op
+        BenchmarkSortSlice-8     1000000              1776 ns/op
+    N=100 go test -bench=.
+        BenchmarkSortSort-8       100000             16588 ns/op
+        BenchmarkSortSlice-8       50000             39035 ns/op
+    N=1000 go test -bench=.
+        BenchmarkSortSort-8         5000            320951 ns/op
+        BenchmarkSortSlice-8        3000            446677 ns/op
+    N=10000 go test -bench=.
+        BenchmarkSortSort-8          500           3644480 ns/op
+        BenchmarkSortSlice-8         300           4962263 ns/op
+    N=100000 go test -bench=.
+        BenchmarkSortSort-8           30          43573572 ns/op
+        BenchmarkSortSlice-8          20          60861706 ns/op
+
+.caption Benchmark ran on my MacBook Pro (8 cores), simply indicative.
+
+* Benchmark
+
+.image state-of-go/img/bench.png _ 800
+
+* Benchmark (log/log)
+
+.image state-of-go/img/bench_log.png _ 800
+
+
+* Plugins
+
+Define a plugin:
+
+.code state-of-go/stdlib/plugin/plugin.go
+
+Then build it:
+
+    go build -buildmode=plugin
+
+_Note_: This currently works only on Linux.
+
+* Plugins
+
+.code state-of-go/stdlib/plugin/main.go /plugin.Open/,/Hello/
+
+* Plugins demo
+
+Demo video: [[https://twitter.com/francesc/status/827851085943566336][twitter.com/francesc]]
+
+Source code: [[https://github.com/campoy/golang-plugins][github.com/campoy/golang-plugins]]
 
 * HTTP shutdown
 
-A long requested feature, graceful shutdown of a `http.Server` was added in Go 1.8.
+Added `Shutdown` method to `http.Server`.
+
+Example:
 
 Call `Shutdown` when a signal is received:
 
-.code examples/shutdown.go /main\(\) {/,/^}
+.code state-of-go/stdlib/shutdown.go /subscribe/,/}\(\)/
+
+* HTTP shutdown
+
+Check why the server stopped.
+
+.code state-of-go/stdlib/shutdown.go /HandleFunc/,/gracefully/
+
 
 * HTTP/2
 
@@ -400,6 +463,27 @@ Call `Shutdown` when a signal is received:
     type Pusher interface {
         Push(target string, opts *PushOptions) error
     }
+
+A simple example:
+
+.code state-of-go/stdlib/http2/http2.go /func rootHandler/,/^}/
+
+* HTTP/2
+
+.play state-of-go/stdlib/http2/http2.go /func main/,/^}/
+
+HTTP: [[http://localhost:8080]]
+HTTP/2: [[https://localhost:8081]]
+
+* HTTP/2
+
+HTTP
+
+.image state-of-go/img/http.png _ 800
+
+HTTP/2
+
+.image state-of-go/img/http2.png _ 800
 
 * More context support
 
@@ -415,73 +499,36 @@ Since Go 1.8:
 - database/sql
 - net.Resolver
 
-* What's coming up in Go 1.9
+* A couple more changes too
 
-* What's coming up in Go 1.9
+.image state-of-go/img/more.png _ 1000
+.caption [[https://beta.golang.org/doc/go1.8][Go 1.8 release notes]]
 
-Before we close, let's quickly touch on some of the things coming up in Go 1.9
+* The community
 
-_note_: All of these are speculation, nothing is set in stone until code hits the repo.
+* Women Who Go
 
-* Aliases
+.image state-of-go/img/wwg.png _ 800
+.caption 16 chapters already! [[http://www.womenwhogo.org]]
 
-After being rolled back before the Go 1.8 freeze, aliases are being re-proposed for Go 1.9 in a more limited fashion.
+* Go meetups
 
-.link https://golang.org/design/18130-type-alias
+.image state-of-go/img/meetups.png _ 900
+.caption Gophers all around the world! [[http://go-meetups.appspot.com]]
 
-TODO SHOW EXAMPLES
+* Conferences:
 
-* Faster / cheaper runtime.MemStats
+- [[https://fosdem.org/2017/][FOSDEM]], right here right now!
+- [[http://www.gophercon.in/][GopherCon India]], Feb 25-25th
+- [[https://gophercon.com/][Gophercon Denver]], Jul 12-15th
+- [[http://golanguk.com/][Golang UK]], August 16th-18th
+- [[http://2017.dotgo.eu/][dotGo]], Nov 6th
 
-The cost of calling `runtime.MemStats` is propotional to the size of the heap; Austin recently timed it at ~1.7ms per Gb.
+* Go 1.8 release party, February 16th
 
-There is a CL ready to land that reduces it to 20 us per proc (thread servicing a goroutine) which is a much smaller upper bound.
+Go 1.8 ships soon!
 
-.link https://golang.org/issue/13613
+Go meetups are organising to hold a [[https://github.com/golang/go/wiki/Go-1.8-release-party][release party]] on the 16th of February.
 
-TODO LINK TO CL
-
-* Improvements to the inliner
-
-Inlining has historically been limited to leaf functions because of the concern of agressive inlining on the call graph.
-
-In support of this Robert Griesemer and Matthew Dempsky have been improving the line number tracking in Go 1.9 to make it flexible enough to lift the restriction on non-leaf functions.
-
-An intern, TODO NAME, has been hired to work on the inliner for 1.9
-
-Josh Bleecher-Snyder has also suggest that the cost model for inlining should be revised to make sure inlining is paying for itself.
-
-TODO LINK TO ISSUE
-
-* A user level poller
-
-Go has used epoll/kqueue/poll/select for _network_sockets_ for years.
-
-Reads/Writes to other file descriptors have traditionally consumed an OS thread during operation
-
-Recently Ian Lance Taylor landed a refactor that broken our the `runtime` polling subsystem [link] and extended to work for the rest of the `os` package.
-
-There is no sign of a programmer accessible poller, yet (link to issue)
-
-* Official dependency management tool
-
-Finally!
-
-Peter Bourgon, Sam Boyer, Jess Frazelle, and Steve Francia have been working on an _official_ dependency management tool, `dep`.
-
-If you're used to Glide or govendor, you won't be too surprised.
-
-.link https://groups.google.com/forum/#!topic/go-package-management/et1qFUjrkP4 Mailing List Announcement
-
-It's described as _pre_alpha_ at the moment, but you should check it out, and let them know what you think.
-
-.link https://github.com/golang/dep
-
-* Conclusion
-
-.image img/party-gopher.png
-
-Upgrade to Go 1.8, now! 
-
-It's literally the best version of Go, _ever_.
-
+.image state-of-go/img/party-gopher.png _ 300
+.caption Join the party!!!
